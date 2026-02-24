@@ -1,0 +1,39 @@
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Elliott Mazzuca <emazzuca@qnx.com>
+pkgname=python3-cairo
+pkgver=1.28.0
+pkgrel=0
+pkgdesc="Python3 bindings for the cairo graphics library"
+url="http://cairographics.org/pycairo/"
+arch="all"
+license="LGPL-2.0-or-later"
+makedepends="python3-dev cairo-dev meson"
+checkdepends="python3-pytest font-dejavu"  # Add font-dejavu here
+subpackages="$pkgname-dev"
+source="https://github.com/pygobject/pycairo/releases/download/v$pkgver/pycairo-$pkgver.tar.gz"
+builddir="$srcdir"/pycairo-$pkgver
+
+build() {
+    # Ensure Python libraries are found
+    export PYTHON=/usr/bin/python3
+    export LDFLAGS="$LDFLAGS $(python3-config --ldflags --embed)"
+    
+    abuild-meson \
+        -Db_lto=false \
+        -Dtests="$(want_check && echo true || echo false)" \
+        . output
+    meson compile -C output
+}
+
+check() {
+    meson test --print-errorlogs -C output
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C output
+    python3 -m compileall "$pkgdir"/usr/lib
+}
+
+sha512sums="
+d3fcb6641ad6dcf9b804dbc2a372f653619512e139fb7a196bb1219b00f60e79e5d60fbbddc2e6a0afb959f9fcb37f1f3c460ad6331274581cb241434865b5a5  pycairo-1.28.0.tar.gz
+"
